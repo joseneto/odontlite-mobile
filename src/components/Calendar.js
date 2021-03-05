@@ -9,80 +9,110 @@ import {
     TouchableOpacity,
     ActivityIndicator
   } from "react-native";
-import { DatePicker } from 'react-native-woodpicker'
+import { Card, Title, Button, IconButton, Colors } from 'react-native-paper';
+import MenuNav from './MenuNav';
+import { DatePicker } from 'react-native-woodpicker';
 import Toast from 'react-native-toast-message';
 const { getCalendar, updateCalendarPatient, updateCalendarTime, clearCalendar, updateCalendarFavorite, updateCalendarCheck ,calendarSessionClear } = require("../store/calendars");
 const { useDispatch, useSelector } = require("react-redux");
 const { pad, addToken, addDays, subDays, toastFailure, dateTextField, dateFormattedUTC } = require('../utils/LibUtils');
 
-  export default function Login({ navigation }) { 
+export default function Login({ navigation }) { 
 
-    const [loading, setLoading] = useState(false);
-    const [formData, setFormData] = useState({date: new Date(), favorite: true});
-    const [formVisual, setFormVisual] = useState({date: new Date(), favorite: false, quantity: 0});
+  const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({date: new Date(), favorite: false, quantity: 0});
+  
 
-    const onChangeDate = (selectedDate) => {
-      const newFormData = {...formData};
-      newFormData.favorite = false;
-      newFormData.date = selectedDate;
-      setFormData(newFormData);
-      
-    };
-
-    const shiftDate =(days) => {
+  const onChangeDate = (selectedDate) => {
+    const newFormData = {...formData};
+    newFormData.favorite = false;
+    newFormData.date = selectedDate;
+    setFormData(newFormData);
     
-      const formVisualTemp = {...formVisual};
-      formVisualTemp.favorite = false;
-      if(days === 1){
-        formVisualTemp.date = addDays(dateTextField(formVisual.date), days);
-      }else{
-      
-        formVisualTemp.date = subDays(dateTextField(formVisual.date), days*-1);
-      }         
+  };
 
-      setFormData(formVisualTemp);
-    };
+  const shiftDate =(days) => {
+  
+    const formVisualTemp = {...formData};
+    formVisualTemp.favorite = false;
+    if(days === 1){
+      formVisualTemp.date = addDays(dateTextField(formData.date), days);
+    }else{
+    
+      formVisualTemp.date = subDays(dateTextField(formData.date), days*-1);
+    }         
 
- 
+    setFormData(formVisualTemp);
+  };
 
-    return (
-        <SafeAreaView style={styles.container}>
-            <View  style={styles.header}>
-              <Text style={styles.textHeader}>Agendados: {formVisual.quantity}</Text>
-              <View style={styles.containerDate}> 
-                <TouchableOpacity onPress={() => shiftDate(-1)}>
-                  <Text style={styles.shiftButton}>{"<"}</Text>
-                </TouchableOpacity>
-                <View style={styles.inputView}>
-                <DatePicker
-                  onDateChange={(date) => onChangeDate(date)}
-                  value={formData.date}
-                  title="Data Agenda"
-                  placeholder={dateFormattedUTC(dateTextField(formData.date))}
-                  //iOSOnlyProps={{style: {color: 'green'} }}
-                  //iosPickerMode="date"
-                  //androidPickerMode="spinner"
-                  //locale="fr"
-                  //isNullable
-                  //disable
-                />
-              </View>
-                <TouchableOpacity onPress={() => shiftDate(1)}>
-                  <Text style={styles.shiftButton}>{">"}</Text>
-                </TouchableOpacity>
-              </View>
-              <Image style={styles.image} source={require("../assets/favorite_filled.png")} />
-            </View>
-        </SafeAreaView>
-    )
+  const setFavorite = () => {
+    const formVisualTemp = {...formData};
+    formVisualTemp.favorite = !formData.favorite;
+    setFormData(formVisualTemp);
   }
 
+  return (
+      <SafeAreaView >
+        <Card style={styles.card}>
+          <Card.Content style={styles.cardContent}>
+            <Text style={styles.textHeader}>Agendados: {formData.quantity}</Text>
+            
+            <View style={styles.containerDate}>        
+            <IconButton
+                icon="arrow-left-bold-box"
+                color="#2196f3"
+                size={22}
+                onPress={() => shiftDate(-1)}
+              />     
+              
+              <View style={styles.inputView}>
+              <DatePicker
+                onDateChange={(date) => onChangeDate(date)}
+                value={formData.date}
+                title="Data Agenda"
+                placeholder={dateFormattedUTC(dateTextField(formData.date))}                 
+              />
+            </View>
+            <IconButton
+                icon="arrow-right-bold-box"
+                color="#2196f3"
+                size={22}
+                onPress={() => shiftDate(1)}
+              />     
+              
+            </View>
+          
+            <TouchableOpacity style={{ marginTop: 45}} onPress={() => setFavorite()}>
+              {formData.favorite &&  <Image
+                source={require("../assets/favorite_filled.png")}
+                style={{ tintColor: "#f44336"}}/>}
+              {!formData.favorite &&  <Image
+                source={require("../assets/favorite_unfilled.png")}
+                />}
+            </TouchableOpacity>
+          </Card.Content>
+        </Card>
+          
+        <MenuNav/> 
+      </SafeAreaView>
+          
+  )
+}
+
   const styles = StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: "#fff",
+
+    card: {      
+      height: 140
+    },
+
+    cardContent: {      
       alignItems: "center"      
-    
+    },
+
+    favorite : {
+      tintColor: "#f44336",
+      marginTop: 45
+
     },
 
     containerDate: {
@@ -108,6 +138,8 @@ const { pad, addToken, addDays, subDays, toastFailure, dateTextField, dateFormat
       marginBottom: 10,    
       fontSize: 18,
       fontFamily: 'Roboto-Bold',
+      alignItems: "center",     
+      justifyContent: 'center'
     },
     
     shiftButton: {
