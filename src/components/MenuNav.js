@@ -1,17 +1,17 @@
-import React,{useState} from 'react';
-import {
-    Text
-  } from "react-native";
+import React from 'react';
 import Calendar from "./Calendar";
 import Patient from "./Patient";
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-
+const { remToken } = require('../utils/LibUtils');
 const Tab = createBottomTabNavigator();
 
-const RecentsRoute = () => <Text>Recents</Text>;
+const Logout = () => {
+  <>
+  </>
+};
 
-export default function MenuNav() {
+export default function MenuNav({navigation}) {
 
 
   return (
@@ -62,7 +62,8 @@ export default function MenuNav() {
       />
       <Tab.Screen
         name="Sair"
-        component={RecentsRoute}
+        component={() =>Logout()}
+        
       
       />
     </Tab.Navigator>

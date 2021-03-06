@@ -11,9 +11,9 @@ import { DataTable, Searchbar, FAB, Button, Card, TextInput, Portal, Dialog } fr
 import { TextInputMask } from 'react-native-masked-text'
 import Loading from './Loading';
 
-const { getPatients, deletePatient, addPagePatients, addPatient } = require("../store/patients");
+const { getPatients, deletePatient, addPagePatients, addPatient, updatePatient } = require("../store/patients");
 const { useDispatch, useSelector } = require("react-redux");
-const { addToken, getUser, toastFailure, toastSuccess } = require('../utils/LibUtils');
+const { addToken, getUser, toastFailure, toastSuccess, AlertConfirm } = require('../utils/LibUtils');
 const _ = require('lodash');
 
 export default function Patient({navigation})
@@ -44,44 +44,56 @@ export default function Patient({navigation})
   }, []);
 
       
-  const handleSearch =(event) => {
+  const handleSearch =() => {
     setLoading(true);
-    dispatch(getPatients(searchInput.current.value)).catch(error => {
+    dispatch(getPatients(searchTerm)).catch(error => {
       toastFailure(error);                    
     }).finally(() => {
       setLoading(false);
+    });    
+  }
+
+const handleRemove = () => {
+    AlertConfirm("Deseja apagar esete paciente?",() => {}, doRemove);
+}
+
+const doRemove = () => {
+  
+  dispatch(deletePatient(id))
+  .then(() => {
+    toastSuccess("Sucesso!"); 
+  })
+  .catch(error => {
+    toastFailure(error);           
+  }); 
+  
+}
+
+const handleChangePage = (page) => {
+    setLoading(true);
+    setPage(page);
+    dispatch(addPagePatients(searchTerm, patients[patients.length-1].id)).catch(error => {
+      toastFailure(error);                       
+    }).finally(() => {
+      setLoading(false);
     });
-    setSearchTerm(searchInput.current.value);
-   
-  }
-
-  const handleRemove = (dataRow) => {
-      if(window.confirm("Deseja realmente apagar esse registro?")){
-          dispatch(deletePatient(dataRow.id))
-          .then(() => {
-            toastSuccess("Sucesso!"); 
-          })
-          .catch(error => {
-            toastFailure(error);           
-          }); 
-      }
-  }
-
-  const handleChangePage = (page) => {
-      setLoading(true);
-      setPage(page);
-      dispatch(addPagePatients(searchTerm, patients[patients.length-1].id)).catch(error => {
-        toastFailure(error);                       
-      }).finally(() => {
-        setLoading(false);
-      });
-  }
+}
 
 
-  const addNewPatient =() =>{
-    setOpen(true);
-    setUpdate(false);
-  }
+const addNewPatient =() =>{
+  resetStates();
+  setOpen(true);
+  setUpdate(false);
+}
+
+const updateRowPatient = (patient) =>{
+  setId(patient.id);
+  setName(patient.name);
+  setContact(patient.contact);
+  setOpen(true);
+  setUpdate(true);
+}
+
 
 const handleConfirm = () => {
   
@@ -127,9 +139,14 @@ const handleConfirm = () => {
 const successBehavior = () => {
   setLoading(false);
   toastSuccess("Sucesso!");     
+  hideModal();
+}
+
+const resetStates = () => {
   setErrorName("");
   setErrorContact("");      
-  hideModal();
+  setName("");
+  setContact("");
 }
 
 const errorBehavior = (error) => {
@@ -153,7 +170,7 @@ const hideModal= () => {
                     placeholder="Procurar"
                     onChangeText={(text) => setSearchTerm(text)}
                     value={searchTerm}
-                    onIconPress={() => console.warn("do serach")}
+                    onIconPress={handleSearch}
                 />                 
               </View>            
           </Card.Content>
@@ -165,7 +182,7 @@ const hideModal= () => {
               </DataTable.Header>
 
               {patients.map((patient, index) =>
-                  <TouchableOpacity key={index} onPress={() => setOpen(true)}>
+                  <TouchableOpacity key={index} onPress={() => updateRowPatient(patient)}>
                   <DataTable.Row key={index}>
                     <DataTable.Cell>{patient.name}</DataTable.Cell>
                     <DataTable.Cell numeric>{patient.contact}</DataTable.Cell>             
@@ -221,7 +238,7 @@ const hideModal= () => {
               {!_.isEmpty(errorContact) && <Text style={styles.textError}>{errorContact}</Text>}
               </Dialog.Content>
               <Dialog.Actions>
-                {update && <Button onPress={hideModal}>Excluir</Button>}
+                {update && <Button onPress={handleRemove}>Excluir</Button>}
                 <Button onPress={handleConfirm}>Confirmar</Button>
                 <Button onPress={hideModal}>Sair</Button>
               </Dialog.Actions>

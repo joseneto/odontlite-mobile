@@ -1,4 +1,5 @@
 
+import { Alert } from "react-native";
 import { MMKV } from 'react-native-mmkv';
 import Toast from 'react-native-toast-message';
 
@@ -108,4 +109,18 @@ export const toastSuccess = (message) => {
     });
  }
  
+ export const AlertConfirm = (text, cancelFunction, confirmFunction) =>
+    Alert.alert(
+      "Alerta",
+      text,
+      [
+        {
+          text: "Cancelar",
+          onPress: cancelFunction,
+          style: "cancel"
+        },
+        { text: "OK", onPress: confirmFunction }
+      ],
+      { cancelable: false }
+    );
 
