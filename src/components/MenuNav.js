@@ -2,14 +2,12 @@ import React,{useState} from 'react';
 import {
     Text
   } from "react-native";
+import Calendar from "./Calendar";
+import Patient from "./Patient";
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 
-  import { createMaterialBottomTabNavigator } from 'react-navigation-material-bottom-tabs';
-
-const Tab = createMaterialBottomTabNavigator();
-
-const MusicRoute = () => <Text>Music</Text>;
-
-const AlbumsRoute = () => <Text>Albums</Text>;
+const Tab = createBottomTabNavigator();
 
 const RecentsRoute = () => <Text>Recents</Text>;
 
@@ -17,33 +15,58 @@ export default function MenuNav() {
 
 
   return (
+ 
     <Tab.Navigator
       initialRouteName="Feed"
       shifting={true}
       sceneAnimationEnabled={false}
+
+      screenOptions={({ route }) => ({
+        tabBarIcon: ({ focused, color, size }) => {
+          let iconName;
+
+          switch(route.name){
+            case "Agenda":
+              iconName = focused
+              ? 'time'
+              : 'time-outline';
+            break;
+            case "Pacientes":
+              iconName = focused
+              ? 'people'
+              : 'people-outline';
+            break;
+            case "Sair":
+              iconName = focused
+              ? 'log-out'
+              : 'log-out-outline';
+            break;
+          }  
+        
+
+          // You can return any component that you like here!
+          return <Ionicons name={iconName} size={size} color={color} />;
+        },
+      })}
+
     >
       <Tab.Screen
-        name="Feed"
-        component={MusicRoute}
-        options={{
-          tabBarIcon: 'calendar-clock',
-        }}
+        name="Agenda"
+        component={Calendar}
+      
       />
       <Tab.Screen
-        name="Notifications"
-        component={AlbumsRoute}
-        options={{
-          tabBarIcon: 'account-multiple',
-        }}
+        name="Pacientes"
+        component={Patient}
+      
       />
       <Tab.Screen
-        name="Messages"
+        name="Sair"
         component={RecentsRoute}
-        options={{
-          tabBarIcon: 'door-open',
-        }}
+      
       />
     </Tab.Navigator>
+    
   );
 };
 

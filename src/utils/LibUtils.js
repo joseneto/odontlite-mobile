@@ -93,7 +93,7 @@ export const isUserMaster = () => {
 export const toastSuccess = (message) => {
     Toast.show({
         type: 'success',
-        position: 'top',
+        position: 'bottom',
         text1: 'Sucesso',
         text2: message       
     });
@@ -102,7 +102,7 @@ export const toastSuccess = (message) => {
  export const toastFailure = (message) => {
     Toast.show({
         type: 'error',
-        position: 'top',
+        position: 'bottom',
         text1: 'Falha',
         text2: message       
     });

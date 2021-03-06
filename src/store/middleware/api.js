@@ -10,13 +10,14 @@ const api = ({dispatch}) => next => async action => {
     const {url, method, data, onSuccess, storeId} = action.payload;
     
     try{
+       
         const response = await axios.request({
             url: apiUrl()+"/"+url,
             headers: {'x-auth-token':  MMKV.getString('token')},
             method,
             data
         })
-        
+       
         let payloadData = response.data;
 
         if(storeId){
@@ -33,15 +34,13 @@ const api = ({dispatch}) => next => async action => {
             dispatch(actions.apiRequestSuccess(payloadData));
         }
 
-    }catch(error){
-        
+    }catch(error){        
         let errorData = error.message;
         if(error.response){
             errorData = error.response.data;
         }
-      
-        throw errorData
-      
+        
+        throw errorData      
     }
 
 }

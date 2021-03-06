@@ -10,14 +10,14 @@ import {
     ActivityIndicator
   } from "react-native";
 import { Card, Title, Button, IconButton, Colors } from 'react-native-paper';
-import MenuNav from './MenuNav';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 import { DatePicker } from 'react-native-woodpicker';
 import Toast from 'react-native-toast-message';
 const { getCalendar, updateCalendarPatient, updateCalendarTime, clearCalendar, updateCalendarFavorite, updateCalendarCheck ,calendarSessionClear } = require("../store/calendars");
 const { useDispatch, useSelector } = require("react-redux");
 const { pad, addToken, addDays, subDays, toastFailure, dateTextField, dateFormattedUTC } = require('../utils/LibUtils');
 
-export default function Login({ navigation }) { 
+export default function Calendar({ navigation }) { 
 
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({date: new Date(), favorite: false, quantity: 0});
@@ -52,7 +52,7 @@ export default function Login({ navigation }) {
   }
 
   return (
-      <SafeAreaView >
+      <SafeAreaView style={styles.container}>
         <Card style={styles.card}>
           <Card.Content style={styles.cardContent}>
             <Text style={styles.textHeader}>Agendados: {formData.quantity}</Text>
@@ -83,17 +83,14 @@ export default function Login({ navigation }) {
             </View>
           
             <TouchableOpacity style={{ marginTop: 45}} onPress={() => setFavorite()}>
-              {formData.favorite &&  <Image
-                source={require("../assets/favorite_filled.png")}
-                style={{ tintColor: "#f44336"}}/>}
-              {!formData.favorite &&  <Image
-                source={require("../assets/favorite_unfilled.png")}
-                />}
+              {formData.favorite && <Ionicons name="heart-outline" size={30} />}
+              {!formData.favorite && <Ionicons name="heart" size={30} color="red" />}
+              
             </TouchableOpacity>
           </Card.Content>
         </Card>
           
-        <MenuNav/> 
+        
       </SafeAreaView>
           
   )
@@ -101,8 +98,12 @@ export default function Login({ navigation }) {
 
   const styles = StyleSheet.create({
 
+    container: {
+      height: "100%"
+    },
     card: {      
-      height: 140
+      height: 140,
+      elevation: 2
     },
 
     cardContent: {      

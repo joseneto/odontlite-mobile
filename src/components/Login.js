@@ -35,12 +35,12 @@ export default function Login({ navigation }) {
     const userSign = getUser();
    
     if(userSign.login){
-      navigation.navigate('Calendar');
+      navigation.navigate('MenuNav');
     }
 
     if(token){      
       addToken(token);          
-      navigation.navigate('Calendar');
+      navigation.navigate('MenuNav');
     }
     
  }, [token]);
