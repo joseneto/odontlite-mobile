@@ -4,31 +4,80 @@ import {
     StyleSheet,
     Text,
     View,
-    Image,
-    TextInput,
-    TouchableOpacity,
-    ActivityIndicator
+    ScrollView,
+    TouchableOpacity    
   } from "react-native";
-import { Card, Title, Button, IconButton, Colors } from 'react-native-paper';
+import { Card, IconButton, List, Badge,Portal, Dialog, Switch, Button, Modal } from 'react-native-paper';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import { DatePicker } from 'react-native-woodpicker';
+import { DatePicker} from 'react-native-woodpicker';
+import ModalSelector from 'react-native-modal-selector'
 import Toast from 'react-native-toast-message';
-const { getCalendar, updateCalendarPatient, updateCalendarTime, clearCalendar, updateCalendarFavorite, updateCalendarCheck ,calendarSessionClear } = require("../store/calendars");
+import Loading from './Loading';
+import Patient from './Patient';
+const { getCalendar, updateCalendarPatient, updateCalendarTime, clearCalendar, updateCalendarFavorite, updateCalendarCheck } = require("../store/calendars");
 const { useDispatch, useSelector } = require("react-redux");
-const { pad, addToken, addDays, subDays, toastFailure, dateTextField, dateFormattedUTC } = require('../utils/LibUtils');
+const { pad, addToken, addDays, subDays, toastFailure, dateTextField, dateFormattedUTC, AlertCancel } = require('../utils/LibUtils');
+const _ = require('lodash');
 
 export default function Calendar({ navigation }) { 
 
+  const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({date: new Date(), favorite: false, quantity: 0});
+  const [update, setUpdate] = useState(false);
+  const [patient, setPatient] = useState({});
+  const [openPatient, setOpenPatient] = useState(false);
+  const [hour, setHour] = useState("08");
+  const [minute, setMinute] = useState("00");
+  const [activeRow, setActiveRow] = useState({calendarId: '', row: 0 });
+  const dispatch = useDispatch();
+  const calendars = useSelector(state => state.entities.calendars.list.map(o => ({...o, tableData: {}})) );
+
+  let hourData = [
+    { label: "06", key: "06" },
+    { label: "07", key: "07" },
+    { label: "08", key: "08" },
+    { label: "09", key: "09" },
+    { label: "10", key: "10" },
+    { label: "11", key: "11" },
+    { label: "12", key: "12" },
+    { label: "13", key: "13" },
+    { label: "14", key: "14" },
+    { label: "15", key: "15" },
+    { label: "16", key: "16" },
+    { label: "17", key: "17" },
+    { label: "18", key: "18" },
+    { label: "19", key: "19" },
+    { label: "20", key: "20" }
+    
+  ];
+
+  let minuteData = [
+    { label: "00", key: "00" },
+    { label: "10", key: "10" },
+    { label: "20", key: "20" },
+    { label: "30", key: "30" },
+    { label: "40", key: "40" },
+    { label: "50", key: "50" }    
+  ];
+
+useEffect(() => {
+  setLoading(true);    
   
+  dispatch(getCalendar({date: dateTextField(formData.date), favorite: formData.favorite})).catch(error => {        
+    toastFailure(error);                   
+  }).finally(() => {      
+    setLoading(false);
+  });
+
+}, [formData]);
+
 
   const onChangeDate = (selectedDate) => {
     const newFormData = {...formData};
     newFormData.favorite = false;
     newFormData.date = selectedDate;
-    setFormData(newFormData);
-    
+    setFormData(newFormData);    
   };
 
   const shiftDate =(days) => {
@@ -51,13 +100,112 @@ export default function Calendar({ navigation }) {
     setFormData(formVisualTemp);
   }
 
+  const handleRemove = (data, calendarRow) => {
+  
+    if(window.confirm("Deseja realmente limpar esse agendamento?")){
+        setLoading(true);
+        dispatch(clearCalendar(data.id, calendarRow)).catch(error => {        
+          toastFailure(error);                    
+        }).finally(() => {
+          handleCloseForm();
+          setLoading(false);
+        });
+    }
+  }
+
+  const openDetailCalendar = (id, row, time, patient) => {
+    const {hour: hourActual, minute: minuteActual} = getTimeRow(row);
+    setActiveRow({calendarId: id, row: row })
+    setOpen(true);
+    setHour(hourActual);
+    setMinute(minuteActual);
+    setPatient(patient);
+    
+  }
+  const hideModal= () => {
+    setOpen(false);
+  }
+
+  const hideModalPatient= () => {
+    setOpenPatient(false);
+  }
+  
+  const setPatientReturn = (data) => {
+    setLoading(true);
+    
+    const patchData = {};
+    patchData[`patient_${activeRow.row}`] = {id: data.id, name: data.name, contact: data.contact};
+    dispatch(updateCalendarPatient(activeRow.calendarId, patchData)).catch(error => {        
+      toastFailure(error);                       
+    }).finally(() => {
+      setPatient(patchData[`patient_${activeRow.row}`]);
+      hideModalPatient();
+      setLoading(false);
+    });
+   
+  }
+
+  const handleConfirmTime = (type, options) => {
+    let newHour = 0;
+    let newMinute = 0;
+
+    if(type === "HOUR"){
+      setHour(options.key);
+      newHour = options.key;
+      newMinute = minute;
+    }else{
+      setMinute(options.key);
+      newHour = hour;
+      newMinute = options.key;
+    }
+
+    const {hour: hourBefore, minute: minuteBefore} = getTimeRow(activeRow.row-1);
+    const {hour: hourAfter, minute: minuteAfter} = getTimeRow(activeRow.row+1);
+
+    if(hourBefore && hourBefore > newHour || (hourBefore === newHour && minuteBefore >= newMinute)){
+      AlertCancel('Horário não pode ser inferior a agenda anterior');
+      return;
+    }else if(hourBefore && hourAfter < newHour || (hourAfter === newHour && minuteAfter <= newMinute)){
+      AlertCancel('Horário não pode ser superior a próxima agenda');
+      return;
+    }
+
+    setLoading(true);
+    const patchData = {};
+    patchData[`time_${activeRow.row}`] = `${newHour}:${newMinute}`;
+
+    dispatch(updateCalendarTime(activeRow.calendarId, patchData)).catch(error => {        
+      toastFailure(error);                     
+    }).finally(() => {
+      setLoading(false);
+    });
+
+  };
+
+  const getTimeRow = (row) => {
+
+    if(row <= 0){
+
+      return {hour: undefined, minute: undefined};
+    }else if(row >= 22){
+
+      return {hour: undefined, minute: undefined};
+    }
+
+    const timeSelected = calendars[0][`time_${row}`];
+    const hour = timeSelected.split(':')[0];
+    const minute = timeSelected.split(':')[1];
+
+    return {hour: hour, minute: minute};
+  };
+
   return (
       <SafeAreaView style={styles.container}>
         <Card style={styles.card}>
           <Card.Content style={styles.cardContent}>
             <Text style={styles.textHeader}>Agendados: {formData.quantity}</Text>
             
-            <View style={styles.containerDate}>        
+            <View style={styles.containerRow}>        
             <IconButton
                 icon="arrow-left-bold-box"
                 color="#2196f3"
@@ -89,8 +237,93 @@ export default function Calendar({ navigation }) {
             </TouchableOpacity>
           </Card.Content>
         </Card>
-          
-        
+        <ScrollView>
+        {calendars.map((value) => (
+          <>
+            {[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21].map((row, index) => {
+            
+            const free = _.isEmpty(value[`patient_${row}`].name);
+            const spot = (free ? 'Disponível' : value[`patient_${row}`].name);
+            const color = (free ? "gray" : (value[`patient_${row}`].isConfirmed ? "#8bc34a" :"#2196f3"))
+
+             return  <TouchableOpacity key={index} onPress={() => openDetailCalendar(value.id, row, value[`time_${row}`], value[`patient_${row}`])}>
+                <List.Item
+                  key={index}
+                  title={spot}       
+                  left={props => <Badge style={{color: "#ffffff", backgroundColor: color}} size={35}>{value[`time_${row}`]}</Badge>}
+                />
+            </TouchableOpacity>
+            }
+            )}
+          </>   
+        ))}     
+        </ScrollView>
+
+        <Portal>
+            <Dialog visible={open} onDismiss={hideModal} >
+              <Dialog.Title>Calendário</Dialog.Title>
+              <Dialog.Content>
+
+              <View style={styles.containerNoFlexRow}>
+               
+                <ModalSelector
+                    cancelButtonAccessibilityLabel={'Cancelar'}
+                    data={hourData}
+                    initValue={hour}
+                    onChange={(option)=>{ handleConfirmTime("HOUR",option) }} />
+                <Text>{" : "}</Text>
+                <ModalSelector
+                    cancelButtonAccessibilityLabel={'Cancelar'}
+                    data={minuteData}
+                    initValue={minute}
+                    onChange={(option)=>{ handleConfirmTime("MINUTE",option) }} />
+              </View>
+            
+              {_.isEmpty(patient.name) && 
+              <Button style={styles.marginButton} icon="plus" mode="contained" onPress={() => setOpenPatient(true)}>
+                Adicionar Paciente
+              </Button>
+              }
+              {!_.isEmpty(patient.name) && 
+              <>
+              <Text style={styles.marginButton}>
+                {patient.name}
+              </Text>
+              <View style={styles.marginButton}>
+                <View style={styles.containerNoFlexRow}>
+                  <Text>Primeira vez</Text>
+                  <Switch value={patient.isFirstTime} onValueChange={() => {}} />
+                </View>
+              </View>
+              <View style={styles.marginButton}>
+                <View style={styles.containerNoFlexRow}>
+                  <Text>Particular</Text>
+                  <Switch value={patient.isPrivate} onValueChange={() => {}} />
+                </View>
+              </View>
+              </>
+              }
+              
+                </Dialog.Content>
+              <Dialog.Actions>
+                {!_.isEmpty(patient.name) && 
+                <>
+                <Button onPress={handleRemove}>Excluir</Button>
+                <Button onPress={handleRemove}>Whatsapp</Button>
+                </>
+                }
+                <Button onPress={hideModal}>Sair</Button>
+              </Dialog.Actions>
+
+          </Dialog>    
+        </Portal>
+        <Portal>
+        <Modal visible={openPatient} onDismiss={hideModalPatient} style={{backgroundColor: 'white', height: "80%"}}>
+          <Patient calendarReturn = {setPatientReturn}/>
+        </Modal>
+        </Portal>
+      <Loading visible={loading} onDismiss={() => setLoading(false)} />
+      <Toast ref={(ref) => Toast.setRef(ref)} />
       </SafeAreaView>
           
   )
@@ -116,11 +349,19 @@ export default function Calendar({ navigation }) {
 
     },
 
-    containerDate: {
+    containerRow: {
       flex: 1, 
       flexDirection: 'row',
       alignContent: 'space-around',
       justifyContent: 'space-between'
+    },
+
+    containerNoFlexRow: {
+      flexDirection: 'row',
+      alignContent: 'space-around',
+      justifyContent: 'flex-start',
+      alignItems: 'center'
+      
     },
 
     inputView: {
@@ -165,4 +406,8 @@ export default function Calendar({ navigation }) {
         backgroundColor: "#FBF5E2"
       },
    
+    marginButton: {    
+      marginTop: 10
+    },
+
   });

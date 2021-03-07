@@ -60,12 +60,11 @@ export default function MenuNav({navigation}) {
         component={Patient}
       
       />
-      <Tab.Screen
+      {/*<Tab.Screen
         name="Sair"
         component={() =>Logout()}
-        
       
-      />
+      />*/}
     </Tab.Navigator>
     
   );

@@ -16,7 +16,7 @@ const { useDispatch, useSelector } = require("react-redux");
 const { addToken, getUser, toastFailure, toastSuccess, AlertConfirm } = require('../utils/LibUtils');
 const _ = require('lodash');
 
-export default function Patient({navigation})
+export default function Patient(props)
 {
   const [id, setId] = useState("");
   const [open, setOpen] = useState(false);
@@ -87,11 +87,16 @@ const addNewPatient =() =>{
 }
 
 const updateRowPatient = (patient) =>{
-  setId(patient.id);
-  setName(patient.name);
-  setContact(patient.contact);
-  setOpen(true);
-  setUpdate(true);
+  if(props.calendarReturn){
+    props.calendarReturn(patient);
+  }else{
+    setId(patient.id);
+    setName(patient.name);
+    setContact(patient.contact);
+    setOpen(true);
+    setUpdate(true);
+  }
+ 
 }
 
 
@@ -161,7 +166,9 @@ const hideModal= () => {
       
   return (
       <SafeAreaView>
+          {!props.calendarReturn &&
           <Toast ref={(ref) => Toast.setRef(ref)} />
+          }
           <View style={styles.container}>
           <Card style={styles.card}>
           <Card.Content style={styles.cardContent}>                
@@ -250,8 +257,6 @@ const hideModal= () => {
       </SafeAreaView>
   )
 }
-
-const containerStyle = {backgroundColor: 'white', padding: 40};
 
 const styles = StyleSheet.create({
 

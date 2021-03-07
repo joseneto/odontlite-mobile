@@ -6,7 +6,7 @@ export default function() {
     return configureStore({
         reducer,
         middleware: [
-            ...getDefaultMiddleware(),
+            ...getDefaultMiddleware({immutableCheck: false}),
             api
         ]}, 
        );   

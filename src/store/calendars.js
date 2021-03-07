@@ -14,7 +14,7 @@ const slice = createSlice({
                 calendars.list[index][attr] = action.payload[attr];                     
             }               
         },
-        calendarsReceived: (calendars, action) =>{            
+        calendarsReceived: (calendars, action) =>{                    
             calendars.list = action.payload;
         },
 

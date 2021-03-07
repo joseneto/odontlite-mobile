@@ -124,3 +124,17 @@ export const toastSuccess = (message) => {
       { cancelable: false }
     );
 
+export const AlertCancel = (text) =>
+    Alert.alert(
+      "Alerta",
+      text,
+      [
+        {
+          text: "Cancelar",
+          onPress: () => {},
+          style: "cancel"
+        }
+      
+      ],
+      { cancelable: false }
+    );
