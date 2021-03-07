@@ -5,7 +5,8 @@ import {
     Text,
     View,
     ScrollView,
-    TouchableOpacity    
+    TouchableOpacity,
+    Linking    
   } from "react-native";
 import { Card, IconButton, List, Badge,Portal, Dialog, Switch, Button, Modal } from 'react-native-paper';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -16,14 +17,14 @@ import Loading from './Loading';
 import Patient from './Patient';
 const { getCalendar, updateCalendarPatient, updateCalendarTime, clearCalendar, updateCalendarFavorite, updateCalendarCheck } = require("../store/calendars");
 const { useDispatch, useSelector } = require("react-redux");
-const { pad, addToken, addDays, subDays, toastFailure, dateTextField, dateFormattedUTC, AlertCancel } = require('../utils/LibUtils');
+const { addDays, subDays, toastFailure, dateTextField, dateFormattedUTC, AlertCancel, AlertConfirm } = require('../utils/LibUtils');
 const _ = require('lodash');
 
 export default function Calendar({ navigation }) { 
 
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState({date: new Date(), favorite: false, quantity: 0});
+  const [formData, setFormData] = useState({date: new Date(), favorite: true, quantity: 0});
   const [update, setUpdate] = useState(false);
   const [patient, setPatient] = useState({});
   const [openPatient, setOpenPatient] = useState(false);
@@ -72,7 +73,6 @@ useEffect(() => {
 
 }, [formData]);
 
-
   const onChangeDate = (selectedDate) => {
     const newFormData = {...formData};
     newFormData.favorite = false;
@@ -97,23 +97,57 @@ useEffect(() => {
   const setFavorite = () => {
     const formVisualTemp = {...formData};
     formVisualTemp.favorite = !formData.favorite;
-    setFormData(formVisualTemp);
-  }
-
-  const handleRemove = (data, calendarRow) => {
   
-    if(window.confirm("Deseja realmente limpar esse agendamento?")){
-        setLoading(true);
-        dispatch(clearCalendar(data.id, calendarRow)).catch(error => {        
-          toastFailure(error);                    
-        }).finally(() => {
-          handleCloseForm();
-          setLoading(false);
-        });
-    }
+    setLoading(true);
+    dispatch(updateCalendarFavorite(calendars[0].id, formVisualTemp.favorite)).catch(error => {        
+      toastFailure(error);                     
+    }).finally(() => {      
+      setFormData(formVisualTemp);    
+      setLoading(false);
+    });
   }
 
-  const openDetailCalendar = (id, row, time, patient) => {
+  const handleChange = (type, checked) => {
+    setLoading(true);
+    
+    const patchData = {};
+    patchData[`patient_${activeRow.row}`] = {...calendars[0][`patient_${activeRow.row}`]};
+
+    if (type === 0){
+        patchData[`patient_${activeRow.row}`].isFirstTime = checked;
+    }else if (type === 1){
+        patchData[`patient_${activeRow.row}`].isPrivate = checked;
+    }else if (type === 2){
+        patchData[`patient_${activeRow.row}`].isConfirmed = checked;
+    }
+    setPatient(patchData[`patient_${activeRow.row}`]);
+
+    dispatch(updateCalendarCheck(activeRow.calendarId, patchData)).catch(error => {        
+      toastFailure(error);                     
+    }).finally(() => {
+     
+      setLoading(false);
+    });
+   
+  }
+
+  const handleRemove = () => {
+    AlertConfirm("Deseja realmente limpar esse agendamento?",() => {}, doRemove);
+  }
+
+  const doRemove = () => {
+    
+    setLoading(true);
+    dispatch(clearCalendar(activeRow.calendarId, activeRow.row)).catch(error => {        
+      toastFailure(error);                    
+    }).finally(() => {
+      hideModal();
+      setLoading(false);
+    });
+    
+  }
+
+  const openDetailCalendar = (id, row, patient) => {
     const {hour: hourActual, minute: minuteActual} = getTimeRow(row);
     setActiveRow({calendarId: id, row: row })
     setOpen(true);
@@ -214,11 +248,12 @@ useEffect(() => {
               />     
               
               <View style={styles.inputView}>
+              
               <DatePicker
                 onDateChange={(date) => onChangeDate(date)}
-                value={formData.date}
+                value={calendars[0] && calendars[0].date ? calendars[0].date : formData.date}
                 title="Data Agenda"
-                placeholder={dateFormattedUTC(dateTextField(formData.date))}                 
+                placeholder={dateFormattedUTC(dateTextField(calendars[0] && calendars[0].date ? new Date(calendars[0].date) : formData.date))}                 
               />
             </View>
             <IconButton
@@ -226,13 +261,12 @@ useEffect(() => {
                 color="#2196f3"
                 size={22}
                 onPress={() => shiftDate(1)}
-              />     
-              
+              />                   
             </View>
           
             <TouchableOpacity style={{ marginTop: 45}} onPress={() => setFavorite()}>
-              {formData.favorite && <Ionicons name="heart-outline" size={30} />}
-              {!formData.favorite && <Ionicons name="heart" size={30} color="red" />}
+              {calendars[0] && !calendars[0].favorite && <Ionicons name="heart-outline" size={30} />}
+              {calendars[0] && calendars[0].favorite && <Ionicons name="heart" size={30} color="red" />}
               
             </TouchableOpacity>
           </Card.Content>
@@ -246,7 +280,7 @@ useEffect(() => {
             const spot = (free ? 'Disponível' : value[`patient_${row}`].name);
             const color = (free ? "gray" : (value[`patient_${row}`].isConfirmed ? "#8bc34a" :"#2196f3"))
 
-             return  <TouchableOpacity key={index} onPress={() => openDetailCalendar(value.id, row, value[`time_${row}`], value[`patient_${row}`])}>
+             return  <TouchableOpacity key={index+"A"} onPress={() => openDetailCalendar(value.id, row, value[`patient_${row}`])}>
                 <List.Item
                   key={index}
                   title={spot}       
@@ -286,30 +320,46 @@ useEffect(() => {
               }
               {!_.isEmpty(patient.name) && 
               <>
-              <Text style={styles.marginButton}>
-                {patient.name}
-              </Text>
+              <View style={styles.marginButton}>
+                <Text style={styles.textPatient}>
+                  {patient.name}
+                </Text>
+                
+                <Text style={styles.textContact}>
+                  {patient.contact}
+                </Text>
+              </View>
+
               <View style={styles.marginButton}>
                 <View style={styles.containerNoFlexRow}>
-                  <Text>Primeira vez</Text>
-                  <Switch value={patient.isFirstTime} onValueChange={() => {}} />
+                  <Text style={styles.textSwitch}>Primeira vez</Text>
+                  <Switch value={patient.isFirstTime} onValueChange={(c) => handleChange(0, c)} />
                 </View>
               </View>
+
               <View style={styles.marginButton}>
                 <View style={styles.containerNoFlexRow}>
-                  <Text>Particular</Text>
-                  <Switch value={patient.isPrivate} onValueChange={() => {}} />
+                  <Text style={styles.textSwitch}>Particular</Text>
+                  <Switch value={patient.isPrivate} onValueChange={(c) => handleChange(1, c)} />
+                </View>
+              </View>
+
+              <View style={styles.marginButton}>
+                <View style={styles.containerNoFlexRow}>
+                  <Text style={styles.textSwitch}>Confirmado</Text>
+                  <Switch value={patient.isConfirmed} onValueChange={(c) => handleChange(2, c)} />
                 </View>
               </View>
               </>
               }
               
-                </Dialog.Content>
+              </Dialog.Content>
               <Dialog.Actions>
                 {!_.isEmpty(patient.name) && 
                 <>
-                <Button onPress={handleRemove}>Excluir</Button>
-                <Button onPress={handleRemove}>Whatsapp</Button>
+                <Button onPress={handleRemove}>Excluir</Button>            
+                <Button onPress={() => Linking.openURL(`whatsapp://send?text=Olá&phone=${patient.contact}`)}>Whatsapp</Button>
+                <Button onPress={() => Linking.openURL(`tel:${patient.contact}`)}>Ligar</Button>
                 </>
                 }
                 <Button onPress={hideModal}>Sair</Button>
@@ -408,6 +458,22 @@ useEffect(() => {
    
     marginButton: {    
       marginTop: 10
+    },
+
+    textPatient: {
+      fontSize: 16,
+      fontFamily: 'Roboto-Bold',
+    },
+
+    textSwitch: {
+      width: 100,
+      fontSize: 14,
+      fontFamily: 'Roboto-Regular',
+    },
+
+    textContact: {
+      fontSize: 14,
+      fontFamily: 'Roboto-Regular',
     },
 
   });

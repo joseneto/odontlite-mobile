@@ -34,7 +34,7 @@ export const dateFormatted = (dateString) =>{
 }
 
 export const dateTextField = (dateObj) =>{
-    
+  
     // adjust 0 before single digit date
     const date = ("0" + dateObj.getDate()).slice(-2);
     // current month
