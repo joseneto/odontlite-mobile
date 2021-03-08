@@ -4,25 +4,37 @@ import Patient from "./Patient";
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {
-  SafeAreaView,
-  StyleSheet,
+  SafeAreaView,  
   Text,
-  View,
-  TouchableOpacity,
-  ScrollView    
+  View
 } from "react-native";
-import { DataTable, Searchbar, FAB, Button, Card, TextInput, 
-  Portal, Dialog, Appbar } from 'react-native-paper';
+import { Button, Appbar } from 'react-native-paper';
+
 const { remToken } = require('../utils/LibUtils');
 const Tab = createBottomTabNavigator();
 
-const Logout = () => {
+const Logout = (props) => {
   
-  return ( <SafeAreaView style={{height:"100%", backgroundColor: "#ffffff"}}>
-  <Button style={{width: "70%", alignItems="center", alignContent="center"}} mode="contained" onPress={() => {}}>
-    Sair
-  </Button>
-</SafeAreaView>);
+  const leave = () => {
+    remToken();
+    props.navigation.navigate("Login");
+  }
+
+  return ( 
+  
+  <SafeAreaView style={{height:"100%", backgroundColor: "#ffffff"}}>
+    <Appbar.Header>
+       <Appbar.Content title="Odontlite" />
+    </Appbar.Header>
+  <View  style={{height:"90%",  alignItems: "center", alignContent: "center",  justifyContent: "center"}}>
+    <Text style={{ fontSize: 15, fontFamily: 'Roboto-Regular', marginBottom: 10}}>Deseja realmente sair?</Text>
+    <Button style={{width: "70%"}} mode="contained" onPress={leave}>
+      Sair
+    </Button>
+
+  </View>
+</SafeAreaView>
+);
  
   
 };
@@ -78,7 +90,7 @@ export default function MenuNav({navigation}) {
       />
       <Tab.Screen
         name="Sair"
-        component={() =>Logout()}
+        component={Logout}
       
       />
     </Tab.Navigator>

@@ -22,7 +22,7 @@ export default function Patient(props)
 {
   const [id, setId] = useState("");
   const [open, setOpen] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -38,12 +38,15 @@ export default function Patient(props)
 
   useEffect(() => {
   
-    setLoading(true);
-    dispatch(getPatients()).catch(error => {        
-        toastFailure(error);                 
-    }).finally(() => {
-      setLoading(false);
-    });
+    if(patients.length == 0){
+      setLoading(true);
+      dispatch(getPatients()).catch(error => {        
+          toastFailure(error);                 
+      }).finally(() => {
+        setLoading(false);
+      });
+    }
+   
   }, []);
 
       
@@ -169,12 +172,7 @@ const hideModal= () => {
 
   return (
       <SafeAreaView>
-         <FAB              
-            style={styles.fab}
-            large
-            icon="plus"
-            onPress={addNewPatient}
-          />
+       
           {!props.calendarReturn &&
           <View>
             <Appbar.Header>
@@ -233,14 +231,7 @@ const hideModal= () => {
                   </TouchableOpacity>
                 )}
 
-                <DataTable.Pagination
-                  page={page}
-                  numberOfPages={page}
-                  onPageChange={page => {
-                    handleChangePage(page);
-                  }}
-                  label={`${page}`}              
-                />
+               
             </DataTable>
           </ScrollView>
           </View>
@@ -280,7 +271,7 @@ const hideModal= () => {
                  <Text style={styles.formText}>Agendas:</Text>}
            
             
-            <ScrollView>
+            <ScrollView style={{height: 120}}>
             {update && calendar.slice().sort(function(a,b) {
                           a = a['date'];
                           b = b['date'];
@@ -304,7 +295,12 @@ const hideModal= () => {
 
           </Dialog>    
         </Portal>
-  
+        <FAB              
+            style={styles.fab}
+            large
+            icon="plus"
+            onPress={addNewPatient}
+          />
         <Loading visible={loading} onDismiss={() => setLoading(false)} />
       </SafeAreaView>
   )
@@ -338,7 +334,7 @@ const styles = StyleSheet.create({
     },
 
     inputSearchBar :{
-      width: '70%',
+      width: '60%',
       backgroundColor: "#2196f3",
       elevation: 0    
     },

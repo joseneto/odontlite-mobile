@@ -15,6 +15,29 @@ export const dayMonthYear = (dateString) =>{
     return [date, month, year];
 }
 
+export const formatDate = (dateObj) => {
+    const stringDate = dateObj.toLocaleDateString();
+    const arr = stringDate.split('/');
+    const month = (arr[0].length === 1 ? "0"+arr[0]: arr[0]);
+    const day = (arr[1].length === 1 ? "0"+arr[1]: arr[1]);
+    const year = arr[2];
+
+    return day+"/"+month+"/"+year;
+}
+
+export const formatStringDate = (stringDate) => {
+
+    if(stringDate === undefined){
+        return " ";
+    }
+    const arr = stringDate.split('-');
+    const month = arr[1];
+    const day = arr[2];
+    const year = arr[0];
+
+    return day+"/"+month+"/"+year;
+}
+
 export const dateFormattedUTC = (dateString) =>{
     const dateArray = dayMonthYear(dateString);
     return dateArray[0] + "/" + dateArray[1] + "/" + dateArray[2];

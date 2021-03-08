@@ -8,7 +8,7 @@ import {
     TouchableOpacity,
     Linking        
   } from "react-native";
-import { List, Badge,Portal, Dialog, Switch, Button, Modal, Appbar } from 'react-native-paper';
+import { List, Badge,Portal, Dialog, Switch, Button, Modal, Appbar, IconButton } from 'react-native-paper';
 import { DatePicker} from 'react-native-woodpicker';
 import ModalSelector from 'react-native-modal-selector'
 import Toast from 'react-native-toast-message';
@@ -16,7 +16,7 @@ import Loading from './Loading';
 import Patient from './Patient';
 const { getCalendar, updateCalendarPatient, updateCalendarTime, clearCalendar, updateCalendarFavorite, updateCalendarCheck } = require("../store/calendars");
 const { useDispatch, useSelector } = require("react-redux");
-const { addDays, subDays, toastFailure, dateTextField, dateFormattedUTC, AlertCancel, AlertConfirm } = require('../utils/LibUtils');
+const { formatStringDate, toastFailure, dateTextField, dateFormattedUTC, AlertCancel, AlertConfirm } = require('../utils/LibUtils');
 const _ = require('lodash');
 
 export default function Calendar({ navigation }) { 
@@ -77,20 +77,6 @@ useEffect(() => {
     newFormData.favorite = false;
     newFormData.date = selectedDate;
     setFormData(newFormData);    
-  };
-
-  const shiftDate =(days) => {
-  
-    const formVisualTemp = {...formData};
-    formVisualTemp.favorite = false;
-    if(days === 1){
-      formVisualTemp.date = addDays(dateTextField(formData.date), days);
-    }else{
-    
-      formVisualTemp.date = subDays(dateTextField(formData.date), days*-1);
-    }         
-
-    setFormData(formVisualTemp);
   };
 
   const setFavorite = () => {
@@ -243,7 +229,7 @@ useEffect(() => {
                     onDateChange={(date) => onChangeDate(date)}
                     value={calendars[0] && calendars[0].date ? calendars[0].date : formData.date}
                     title="Data Agenda"
-                    placeholder={dateFormattedUTC(dateTextField(calendars[0] && calendars[0].date ? new Date(calendars[0].date) : formData.date))}                 
+                    placeholder={formatStringDate(calendars[0] && calendars[0].date)}                 
                   />
                   <Appbar.Action icon={calendars[0] && !calendars[0].favorite ?"heart-outline" :"heart" } onPress={() => setFavorite()} />   
 
@@ -303,9 +289,21 @@ useEffect(() => {
                   {patient.name}
                 </Text>
                 
-                <Text style={styles.textContact}>
-                  {patient.contact}
-                </Text>
+                <View style={styles.viewContact}>
+                  <Text style={styles.textContact}>
+                    {patient.contact}
+                  </Text>
+                  <IconButton
+                    icon="whatsapp"
+                    color="#4caf50"
+                    onPress={() => Linking.openURL(`whatsapp://send?text=Olá&phone=55${patient.contact}`)}
+                  />
+                    <IconButton
+                    icon="phone"
+                    color="#f50057"
+                    onPress={() => Linking.openURL(`tel:${patient.contact}`)}
+                  />
+                </View>
               </View>
 
               <View style={styles.marginButton}>
@@ -336,8 +334,6 @@ useEffect(() => {
                 {!_.isEmpty(patient.name) && 
                 <>
                 <Button onPress={handleRemove}>Excluir</Button>            
-                <Button onPress={() => Linking.openURL(`whatsapp://send?text=Olá&phone=${patient.contact}`)}>Whatsapp</Button>
-                <Button onPress={() => Linking.openURL(`tel:${patient.contact}`)}>Ligar</Button>
                 </>
                 }
                 <Button onPress={hideModal}>Sair</Button>
@@ -450,7 +446,15 @@ useEffect(() => {
 
     textContact: {
       fontSize: 14,
-      fontFamily: 'Roboto-Regular',
+      fontFamily: 'Roboto-Regular'
+     
+    },
+
+    viewContact: {
+      flexDirection: 'row',
+      alignContent: 'space-around',
+      justifyContent: 'space-between',
+      alignItems: 'center'
     },
 
   });
