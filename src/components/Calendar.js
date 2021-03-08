@@ -6,10 +6,9 @@ import {
     View,
     ScrollView,
     TouchableOpacity,
-    Linking    
+    Linking        
   } from "react-native";
-import { Card, IconButton, List, Badge,Portal, Dialog, Switch, Button, Modal } from 'react-native-paper';
-import Ionicons from 'react-native-vector-icons/Ionicons';
+import { List, Badge,Portal, Dialog, Switch, Button, Modal, Appbar } from 'react-native-paper';
 import { DatePicker} from 'react-native-woodpicker';
 import ModalSelector from 'react-native-modal-selector'
 import Toast from 'react-native-toast-message';
@@ -235,42 +234,21 @@ useEffect(() => {
 
   return (
       <SafeAreaView style={styles.container}>
-        <Card style={styles.card}>
-          <Card.Content style={styles.cardContent}>
-            <Text style={styles.textHeader}>Agendados: {formData.quantity}</Text>
-            
-            <View style={styles.containerRow}>        
-            <IconButton
-                icon="arrow-left-bold-box"
-                color="#2196f3"
-                size={22}
-                onPress={() => shiftDate(-1)}
-              />     
-              
-              <View style={styles.inputView}>
-              
-              <DatePicker
-                onDateChange={(date) => onChangeDate(date)}
-                value={calendars[0] && calendars[0].date ? calendars[0].date : formData.date}
-                title="Data Agenda"
-                placeholder={dateFormattedUTC(dateTextField(calendars[0] && calendars[0].date ? new Date(calendars[0].date) : formData.date))}                 
-              />
-            </View>
-            <IconButton
-                icon="arrow-right-bold-box"
-                color="#2196f3"
-                size={22}
-                onPress={() => shiftDate(1)}
-              />                   
-            </View>
-          
-            <TouchableOpacity style={{ marginTop: 45}} onPress={() => setFavorite()}>
-              {calendars[0] && !calendars[0].favorite && <Ionicons name="heart-outline" size={30} />}
-              {calendars[0] && calendars[0].favorite && <Ionicons name="heart" size={30} color="red" />}
-              
-            </TouchableOpacity>
-          </Card.Content>
-        </Card>
+        <Appbar.Header>
+              <Appbar.Content title={`Agenda: ${calendars && calendars[0] ? calendars[0].quantity : "0"}`} />
+             
+                  <DatePicker
+                    
+                    placeholderStyle={{color:"#ffffff"}}
+                    onDateChange={(date) => onChangeDate(date)}
+                    value={calendars[0] && calendars[0].date ? calendars[0].date : formData.date}
+                    title="Data Agenda"
+                    placeholder={dateFormattedUTC(dateTextField(calendars[0] && calendars[0].date ? new Date(calendars[0].date) : formData.date))}                 
+                  />
+                  <Appbar.Action icon={calendars[0] && !calendars[0].favorite ?"heart-outline" :"heart" } onPress={() => setFavorite()} />   
+
+              </Appbar.Header>
+       
         <ScrollView>
         {calendars.map((value) => (
           <>
@@ -369,7 +347,7 @@ useEffect(() => {
         </Portal>
         <Portal>
         <Modal visible={openPatient} onDismiss={hideModalPatient} style={{backgroundColor: 'white', height: "80%"}}>
-          <Patient calendarReturn = {setPatientReturn}/>
+          <Patient calendarReturn = {setPatientReturn} hideModal={hideModalPatient}/>
         </Modal>
         </Portal>
       <Loading visible={loading} onDismiss={() => setLoading(false)} />
@@ -421,8 +399,7 @@ useEffect(() => {
       height: 35,
       borderColor: "grey",
       marginBottom: 10,
-      borderWidth: 1,
-      alignItems: "center",
+      borderWidth: 1,      
       backgroundColor: "#fff",
     },
     textHeader: {

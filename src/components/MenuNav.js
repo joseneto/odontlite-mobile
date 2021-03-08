@@ -3,12 +3,28 @@ import Calendar from "./Calendar";
 import Patient from "./Patient";
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import {
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  View,
+  TouchableOpacity,
+  ScrollView    
+} from "react-native";
+import { DataTable, Searchbar, FAB, Button, Card, TextInput, 
+  Portal, Dialog, Appbar } from 'react-native-paper';
 const { remToken } = require('../utils/LibUtils');
 const Tab = createBottomTabNavigator();
 
 const Logout = () => {
-  <>
-  </>
+  
+  return ( <SafeAreaView style={{height:"100%", backgroundColor: "#ffffff"}}>
+  <Button style={{width: "70%", alignItems="center", alignContent="center"}} mode="contained" onPress={() => {}}>
+    Sair
+  </Button>
+</SafeAreaView>);
+ 
+  
 };
 
 export default function MenuNav({navigation}) {
@@ -60,11 +76,11 @@ export default function MenuNav({navigation}) {
         component={Patient}
       
       />
-      {/*<Tab.Screen
+      <Tab.Screen
         name="Sair"
         component={() =>Logout()}
       
-      />*/}
+      />
     </Tab.Navigator>
     
   );

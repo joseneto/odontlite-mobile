@@ -4,11 +4,11 @@ import {
   StyleSheet,
   Text,
   View,
-  Image,
-  TextInput,
+  Image,  
   TouchableOpacity,
   ActivityIndicator
 } from "react-native";
+import { TextInput, Button } from 'react-native-paper';
 import Toast from 'react-native-toast-message';
 const { useDispatch, useSelector } = require("react-redux");
 const { signUser } = require("../store/users");
@@ -110,18 +110,19 @@ export default function Login({ navigation }) {
  
       <View style={styles.inputView}>
         <TextInput
+          mode="outlined"
           style={styles.TextInput}
           keyboardType = 'numeric'
           placeholder="Identificador"
           placeholderTextColor="#003f5c"
           value={local}
           onChangeText={(local) => handleIdentField(local)}
-          />
-        
+          />       
       </View>
       {!_.isEmpty(errorLocal) && <Text style={styles.textError}>{errorLocal}</Text>}
       <View style={styles.inputView}>
         <TextInput
+          mode="outlined"
           style={styles.TextInput}
           placeholder="Usuário"
           placeholderTextColor="#003f5c"
@@ -133,6 +134,7 @@ export default function Login({ navigation }) {
       {!_.isEmpty(errorUser) && <Text style={styles.textError}>{errorUser}</Text>}
       <View style={styles.inputView}>
         <TextInput
+          mode="outlined"
           style={styles.TextInput}
           placeholder="Senha"
           placeholderTextColor="#003f5c"
@@ -146,9 +148,10 @@ export default function Login({ navigation }) {
       {!_.isEmpty(errorPassword) && <Text style={styles.textError}>{errorPassword}</Text>}
       
       
-      <TouchableOpacity style={styles.loginBtn} onPress={handleConfirm}>
-        <Text style={styles.loginText}>Entrar</Text>
-      </TouchableOpacity>
+      <Button style={styles.loginBtn} mode="contained" onPress={handleConfirm}>
+                Entrar
+              </Button>
+   
 
     
 
@@ -179,18 +182,14 @@ const styles = StyleSheet.create({
     marginBottom: 40,
   },
  
-  inputView: {
-    
-    width: "70%",
+  inputView: {    
+    width: "84%",
     height: 45,
-    borderColor: "grey",
-    marginBottom: 10,
-    borderWidth: 1,
-    alignItems: "center",
+    marginTop: 20
+    
   },
  
-  TextInput: {
-    height: 30, 
+  TextInput: {    
     flex: 1,
     padding: 10
     
@@ -211,19 +210,17 @@ const styles = StyleSheet.create({
   },
 
   textError: {
-    height: 20,
+    
     fontSize: 10,
     color: "red",
     fontFamily: 'Roboto-Regular',
+    marginTop: 30
   },
  
   loginBtn: {
     width: "80%",
     height: 40,
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 40,
-    backgroundColor: "#2196f3",    
+    marginTop: 60,    
   },
 
   loginText: {    

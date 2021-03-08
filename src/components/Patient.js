@@ -4,16 +4,18 @@ import {
     StyleSheet,
     Text,
     View,
-    TouchableOpacity    
+    TouchableOpacity,
+    ScrollView    
   } from "react-native";
 import Toast from 'react-native-toast-message';
-import { DataTable, Searchbar, FAB, Button, Card, TextInput, Portal, Dialog } from 'react-native-paper';
+import { DataTable, Searchbar, FAB, Button, Card, TextInput, 
+  Portal, Dialog, Appbar } from 'react-native-paper';
 import { TextInputMask } from 'react-native-masked-text'
 import Loading from './Loading';
 
 const { getPatients, deletePatient, addPagePatients, addPatient, updatePatient } = require("../store/patients");
 const { useDispatch, useSelector } = require("react-redux");
-const { addToken, getUser, toastFailure, toastSuccess, AlertConfirm } = require('../utils/LibUtils');
+const { toastFailure, toastSuccess, AlertConfirm, dateFormatted, dateFormattedUTC } = require('../utils/LibUtils');
 const _ = require('lodash');
 
 export default function Patient(props)
@@ -28,6 +30,7 @@ export default function Patient(props)
   const [errorContact, setErrorContact] = useState("");
   const [name, setName] = useState("");
   const [contact, setContact] = useState("");
+  const [calendar, setCalendar] = useState([]);
   const [update, setUpdate] = useState(false);
 
   const dispatch = useDispatch();
@@ -93,12 +96,12 @@ const updateRowPatient = (patient) =>{
     setId(patient.id);
     setName(patient.name);
     setContact(patient.contact);
+    setCalendar(patient.calendar);
     setOpen(true);
     setUpdate(true);
   }
  
 }
-
 
 const handleConfirm = () => {
   
@@ -152,6 +155,7 @@ const resetStates = () => {
   setErrorContact("");      
   setName("");
   setContact("");
+  setCalendar([]);
 }
 
 const errorBehavior = (error) => {
@@ -163,55 +167,82 @@ const hideModal= () => {
   setOpen(false);
 }
 
-      
   return (
       <SafeAreaView>
+         <FAB              
+            style={styles.fab}
+            large
+            icon="plus"
+            onPress={addNewPatient}
+          />
           {!props.calendarReturn &&
-          <Toast ref={(ref) => Toast.setRef(ref)} />
+          <View>
+            <Appbar.Header>
+              <Appbar.Content title="Pacientes" />
+              <Searchbar 
+                  
+                  iconColor="#ffffff" 
+                  selectionColor="#ffffff" 
+                  style={styles.inputSearchBar}
+                  placeholder="Procurar"
+                  onChangeText={(text) => setSearchTerm(text)}
+                  value={searchTerm}
+                  onIconPress={handleSearch}
+                  underlineColorAndroid="transparent"
+                  placeholderTextColor="#ffffff"
+                  inputStyle={{color: '#ffffff'}}
+                />                            
+              </Appbar.Header>
+          
+            <Toast ref={(ref) => Toast.setRef(ref)} />
+          </View>
           }
           <View style={styles.container}>
+          {props.calendarReturn &&  
           <Card style={styles.card}>
-          <Card.Content style={styles.cardContent}>                
+          <Card.Content style={styles.cardContent}>       
+                
               <View style={styles.containerSearch}>                       
                 <Searchbar style={styles.inputSearch}
                     placeholder="Procurar"
                     onChangeText={(text) => setSearchTerm(text)}
                     value={searchTerm}
-                    onIconPress={handleSearch}
-                />                 
+                    onIconPress={handleSearch}                   
+                />        
+                 <Button style={styles.buttonOut} icon="door-open" mode="contained" onPress={() => props.hideModal()}>
+                  Sair
+                </Button>         
               </View>            
+        
           </Card.Content>
           </Card>
-          <DataTable>
-              <DataTable.Header>
-              <DataTable.Title>Paciente</DataTable.Title>
-              <DataTable.Title numeric>Telefone</DataTable.Title>
-              </DataTable.Header>
+            }
+          <ScrollView>
+            <DataTable>
+                <DataTable.Header>
+                <DataTable.Title>Paciente</DataTable.Title>
+                <DataTable.Title numeric>Telefone</DataTable.Title>
+                </DataTable.Header>
 
-              {patients.map((patient, index) =>
-                  <TouchableOpacity key={index} onPress={() => updateRowPatient(patient)}>
-                  <DataTable.Row key={index}>
-                    <DataTable.Cell>{patient.name}</DataTable.Cell>
-                    <DataTable.Cell numeric>{patient.contact}</DataTable.Cell>             
-                  </DataTable.Row>
-                </TouchableOpacity>
-              )}
+                {patients.map((patient, index) =>
+                    <TouchableOpacity key={index} onPress={() => updateRowPatient(patient)}>
+                    <DataTable.Row key={index}>
+                      <DataTable.Cell>{patient.name}</DataTable.Cell>
+                      <DataTable.Cell numeric>{patient.contact}</DataTable.Cell>             
+                    </DataTable.Row>
+                  </TouchableOpacity>
+                )}
 
-              <DataTable.Pagination
-                page={page}
-                numberOfPages={page}
-                onPageChange={page => {
-                  handleChangePage(page);
-                }}
-                label={`${page}`}              
-              />
-          </DataTable>
-          <FAB              
-              style={styles.fab}
-              small
-              icon="plus"
-              onPress={addNewPatient}
-          />
+                <DataTable.Pagination
+                  page={page}
+                  numberOfPages={page}
+                  onPageChange={page => {
+                    handleChangePage(page);
+                  }}
+                  label={`${page}`}              
+                />
+            </DataTable>
+          </ScrollView>
           </View>
           
           <Portal>
@@ -243,6 +274,27 @@ const hideModal= () => {
                   }
                 />
               {!_.isEmpty(errorContact) && <Text style={styles.textError}>{errorContact}</Text>}
+
+              
+              {update && 
+                 <Text style={styles.formText}>Agendas:</Text>}
+           
+            
+            <ScrollView>
+            {update && calendar.slice().sort(function(a,b) {
+                          a = a['date'];
+                          b = b['date'];
+                          return a > b ? -1 : a < b ? 1 : 0;
+                      }).map((value, index) => {
+                      return   <>
+                    
+                          <Text>{`Data: ${dateFormattedUTC(value.date)} - Hora: ${value.time}` } </Text>        
+                    
+                      </>
+              
+             })} 
+            </ScrollView>
+
               </Dialog.Content>
               <Dialog.Actions>
                 {update && <Button onPress={handleRemove}>Excluir</Button>}
@@ -263,8 +315,9 @@ const styles = StyleSheet.create({
     container: {
       height: "100%"
     },
+
     card: {      
-      height: 140,
+      height: 70,
       elevation: 2
     },
 
@@ -272,26 +325,36 @@ const styles = StyleSheet.create({
       alignItems: "center"      
     },
 
-    containerSearch: {
-    
-      width: "100%",
+    buttonOut:{
+      height: 40,
+      marginLeft: 10,
+      backgroundColor: "#f44336"
+    },
+
+    containerSearch: {      
       flexDirection: 'row',
-      alignContent: 'space-around',
-      justifyContent: 'center'
+      alignItems: "center",     
+      justifyContent: 'center',
+    },
+
+    inputSearchBar :{
+      width: '70%',
+      backgroundColor: "#2196f3",
+      elevation: 0    
     },
 
     inputSearch :{
-      width: '70%'
+      width: '70%',      
     },
 
     fab: {
         position: 'absolute',
-        margin: 36,
+        marginBottom: 80,
+        marginRight: 40,
         right: 0,
         bottom: 0,
         backgroundColor: '#f44336'
     },
-
 
     flexRow :{
       marginTop: 20,      
