@@ -243,7 +243,8 @@ const hideModal= () => {
                 <TextInput
                   mode="outlined"
                   label="Paciente"
-                  value={name}
+                  defaultValue={name}
+                  autoCorrect={false}
                   onChangeText={text => setName(text)}
                 />
               {!_.isEmpty(errorName) && <Text style={styles.textError}>{errorName}</Text>}
