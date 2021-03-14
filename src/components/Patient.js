@@ -15,7 +15,7 @@ import Loading from './Loading';
 
 const { getPatients, deletePatient, addPagePatients, addPatient, updatePatient } = require("../store/patients");
 const { useDispatch, useSelector } = require("react-redux");
-const {   AlertConfirm, dateFormattedUTC } = require('../utils/LibUtils');
+const {   AlertConfirm, formatStringDate } = require('../utils/LibUtils');
 const _ = require('lodash');
 
 export default function Patient(props)
@@ -281,7 +281,7 @@ const hideModal= () => {
                       }).map((value, index) => {
                       return   <>
                     
-                          <Text>{`Data: ${dateFormattedUTC(value.date)} - Hora: ${value.time}` } </Text>        
+                          <Text>{`Data: ${formatStringDate(value.date)} - Hora: ${value.time}` } </Text>        
                     
                       </>
               
