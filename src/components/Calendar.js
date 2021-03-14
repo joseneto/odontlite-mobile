@@ -104,7 +104,10 @@ useEffect(() => {
         patchData[`patient_${activeRow.row}`].isPrivate = checked;
     }else if (type === 2){
         patchData[`patient_${activeRow.row}`].isConfirmed = checked;
-    }
+    }else if (type === 3){
+      patchData[`patient_${activeRow.row}`].isReview = checked;
+  }
+
     setPatient(patchData[`patient_${activeRow.row}`]);
 
     dispatch(updateCalendarCheck(activeRow.calendarId, patchData)).catch(error => {        
@@ -238,15 +241,19 @@ useEffect(() => {
         <ScrollView>
         {calendars.map((value) => (
           <>
-            {[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21].map((row, index) => {
+            {[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16].map((row, index) => {
             
             const free = _.isEmpty(value[`patient_${row}`].name);
             const spot = (free ? 'Disponível' : value[`patient_${row}`].name);
-            const color = (free ? "gray" : (value[`patient_${row}`].isConfirmed ? "#8bc34a" :"#2196f3"))
+            const color = (free ? "gray" : (value[`patient_${row}`].isConfirmed ? "#8bc34a" :"#2196f3"));
+            let infos = (value[`patient_${row}`].isReview ?"[Revisão] " : "");
+            infos += (value[`patient_${row}`].isFirstTime ?"[Primeira Vez] " : "");
+            infos += (value[`patient_${row}`].isPrivate ?"[Particular] " : "");
 
-             return  <TouchableOpacity key={index+"A"} onPress={() => openDetailCalendar(value.id, row, value[`patient_${row}`])}>
+             return  <TouchableOpacity key={row+"A"} onPress={() => openDetailCalendar(value.id, row, value[`patient_${row}`])}>
                 <List.Item
-                  key={index}
+                  description={infos}
+                  key={row}
                   title={spot}       
                   left={props => <Badge style={{color: "#ffffff", backgroundColor: color}} size={35}>{value[`time_${row}`]}</Badge>}
                 />
@@ -303,6 +310,13 @@ useEffect(() => {
                     color="#f50057"
                     onPress={() => Linking.openURL(`tel:${patient.contact}`)}
                   />
+                </View>
+              </View>
+
+              <View style={styles.marginButton}>
+                <View style={styles.containerNoFlexRow}>
+                  <Text style={styles.textSwitch}>Revisão</Text>
+                  <Switch value={patient.isReview} onValueChange={(c) => handleChange(3, c)} />
                 </View>
               </View>
 

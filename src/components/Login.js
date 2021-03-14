@@ -123,6 +123,8 @@ export default function Login({ navigation }) {
       <View style={styles.inputView}>
         <TextInput
           mode="outlined"
+          autoCapitalize='none'
+          autoCorrect={false}
           style={styles.TextInput}
           placeholder="Usuário"
           placeholderTextColor="#003f5c"
@@ -135,6 +137,8 @@ export default function Login({ navigation }) {
       <View style={styles.inputView}>
         <TextInput
           mode="outlined"
+          autoCapitalize='none'
+          autoCorrect={false}
           style={styles.TextInput}
           placeholder="Senha"
           placeholderTextColor="#003f5c"
