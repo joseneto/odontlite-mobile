@@ -7,15 +7,15 @@ import {
     TouchableOpacity,
     ScrollView    
   } from "react-native";
-import Toast from 'react-native-toast-message';
+
 import { DataTable, Searchbar, FAB, Button, Card, TextInput, 
-  Portal, Dialog, Appbar } from 'react-native-paper';
+  Portal, Dialog, Appbar, Snackbar } from 'react-native-paper';
 import { TextInputMask } from 'react-native-masked-text'
 import Loading from './Loading';
 
 const { getPatients, deletePatient, addPagePatients, addPatient, updatePatient } = require("../store/patients");
 const { useDispatch, useSelector } = require("react-redux");
-const { toastFailure, toastSuccess, AlertConfirm, dateFormatted, dateFormattedUTC } = require('../utils/LibUtils');
+const {   AlertConfirm, dateFormattedUTC } = require('../utils/LibUtils');
 const _ = require('lodash');
 
 export default function Patient(props)
@@ -23,7 +23,7 @@ export default function Patient(props)
   const [id, setId] = useState("");
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [page, setPage] = useState(1);
+  const [toastMessage, setToastMessage] = useState("");
   const [searchTerm, setSearchTerm] = useState('');
 
   const [errorName, setErrorName] = useState("");
@@ -41,7 +41,7 @@ export default function Patient(props)
     if(patients.length == 0){
       setLoading(true);
       dispatch(getPatients()).catch(error => {        
-          toastFailure(error);                 
+        setToastMessage(error);                 
       }).finally(() => {
         setLoading(false);
       });
@@ -53,7 +53,7 @@ export default function Patient(props)
   const handleSearch =() => {
     setLoading(true);
     dispatch(getPatients(searchTerm)).catch(error => {
-      toastFailure(error);                    
+      setToastMessage(error);                    
     }).finally(() => {
       setLoading(false);
     });    
@@ -67,7 +67,8 @@ const doRemove = () => {
   
   dispatch(deletePatient(id))
   .then(() => {
-    toastSuccess("Sucesso!"); 
+    hideModal();
+    setToastMessage("Sucesso!"); 
   })
   .catch(error => {
     toastFailure(error);           
@@ -79,7 +80,7 @@ const handleChangePage = (page) => {
     setLoading(true);
     setPage(page);
     dispatch(addPagePatients(searchTerm, patients[patients.length-1].id)).catch(error => {
-      toastFailure(error);                       
+      setToastMessage(error);                       
     }).finally(() => {
       setLoading(false);
     });
@@ -149,7 +150,7 @@ const handleConfirm = () => {
 
 const successBehavior = () => {
   setLoading(false);
-  toastSuccess("Sucesso!");     
+  setToastMessage("Sucesso!");     
   hideModal();
 }
 
@@ -163,7 +164,7 @@ const resetStates = () => {
 
 const errorBehavior = (error) => {
   setLoading(false);
-  toastFailure(error);      
+  setToastMessage(error);      
 }
 
 const hideModal= () => {
@@ -192,7 +193,7 @@ const hideModal= () => {
                 />                            
               </Appbar.Header>
           
-            <Toast ref={(ref) => Toast.setRef(ref)} />
+            
           </View>
           }
           <View style={styles.container}>
@@ -273,7 +274,7 @@ const hideModal= () => {
            
             
             <ScrollView style={{height: 120}}>
-            {update && calendar.slice().sort(function(a,b) {
+            {update && calendar && calendar.slice().sort(function(a,b) {
                           a = a['date'];
                           b = b['date'];
                           return a > b ? -1 : a < b ? 1 : 0;
@@ -303,6 +304,19 @@ const hideModal= () => {
             onPress={addNewPatient}
           />
         <Loading visible={loading} onDismiss={() => setLoading(false)} />
+        <Snackbar
+        style={styles.toast}
+        visible={!_.isEmpty(toastMessage)}
+        onDismiss={() => setToastMessage("")}
+        action={{
+          label: 'Limpar',
+          onPress: () => {
+            setToastMessage("")
+          },
+        }}
+       >
+        {toastMessage}
+      </Snackbar>
       </SafeAreaView>
   )
 }
@@ -351,6 +365,10 @@ const styles = StyleSheet.create({
         right: 0,
         bottom: 0,
         backgroundColor: '#f44336'
+    },
+
+    toast: {   
+      marginBottom: 70   
     },
 
     flexRow :{

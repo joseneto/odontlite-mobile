@@ -5,14 +5,13 @@ import {
   Text,
   View,
   Image,  
-  TouchableOpacity,
   ActivityIndicator
 } from "react-native";
-import { TextInput, Button } from 'react-native-paper';
-import Toast from 'react-native-toast-message';
+import { TextInput, Button, Snackbar } from 'react-native-paper';
+
 const { useDispatch, useSelector } = require("react-redux");
 const { signUser } = require("../store/users");
-const { pad, addToken, getUser, toastFailure } = require('../utils/LibUtils');
+const { pad, addToken, getUser } = require('../utils/LibUtils');
 const _ = require('lodash');
  
 export default function Login({ navigation }) { 
@@ -26,9 +25,12 @@ export default function Login({ navigation }) {
   const [errorUser, setErrorUser] = useState("");
   const [errorPassword, setErrorPassword] = useState("");
 
+  const [toastMessage, setToastMessage] = useState("");
+
   const token = useSelector(state => state.entities.users.token);
 
   const dispatch = useDispatch();
+
 
   useEffect(() => {
 
@@ -94,7 +96,7 @@ export default function Login({ navigation }) {
 
   const errorBehavior = (error) => {
     setLoading(false);
-    toastFailure(error);    
+    setToastMessage(error);    
   }
 
   const resetStates = () => {
@@ -167,7 +169,18 @@ export default function Login({ navigation }) {
         {'.'}
       </Text>
       {loading &&  <ActivityIndicator size="large" color="#f44336"/>}
-      <Toast ref={(ref) => Toast.setRef(ref)} />
+      <Snackbar
+        visible={!_.isEmpty(toastMessage)}
+        onDismiss={() => setToastMessage("")}
+        action={{
+          label: 'Limpar',
+          onPress: () => {
+            setToastMessage("")
+          },
+        }}
+       >
+        {toastMessage}
+      </Snackbar>
     </SafeAreaView>
 
   );

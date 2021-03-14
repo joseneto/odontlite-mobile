@@ -8,15 +8,14 @@ import {
     TouchableOpacity,
     Linking        
   } from "react-native";
-import { List, Badge,Portal, Dialog, Switch, Button, Modal, Appbar, IconButton } from 'react-native-paper';
+import { List, Badge,Portal, Dialog, Switch, Button, Modal, Appbar, IconButton, Snackbar,Checkbox  } from 'react-native-paper';
 import { DatePicker} from 'react-native-woodpicker';
 import ModalSelector from 'react-native-modal-selector'
-import Toast from 'react-native-toast-message';
 import Loading from './Loading';
 import Patient from './Patient';
-const { getCalendar, updateCalendarPatient, updateCalendarTime, clearCalendar, updateCalendarFavorite, updateCalendarCheck } = require("../store/calendars");
+const { getCalendar, updateCalendarPatient, updateCalendarTime, clearCalendar, updateCalendarFavorite, updateCalendarCheck, fullCalendar } = require("../store/calendars");
 const { useDispatch, useSelector } = require("react-redux");
-const { formatStringDate, toastFailure, dateTextField, dateFormattedUTC, AlertCancel, AlertConfirm } = require('../utils/LibUtils');
+const { formatStringDate, dateTextField, AlertCancel, AlertConfirm } = require('../utils/LibUtils');
 const _ = require('lodash');
 
 export default function Calendar({ navigation }) { 
@@ -24,7 +23,7 @@ export default function Calendar({ navigation }) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({date: new Date(), favorite: true, quantity: 0});
-  const [update, setUpdate] = useState(false);
+  const [toastMessage, setToastMessage] = useState("");
   const [patient, setPatient] = useState({});
   const [openPatient, setOpenPatient] = useState(false);
   const [hour, setHour] = useState("08");
@@ -65,7 +64,7 @@ useEffect(() => {
   setLoading(true);    
   
   dispatch(getCalendar({date: dateTextField(formData.date), favorite: formData.favorite})).catch(error => {        
-    toastFailure(error);                   
+    setToastMessage(error);                   
   }).finally(() => {      
     setLoading(false);
   });
@@ -85,7 +84,7 @@ useEffect(() => {
   
     setLoading(true);
     dispatch(updateCalendarFavorite(calendars[0].id, formVisualTemp.favorite)).catch(error => {        
-      toastFailure(error);                     
+      setToastMessage(error);                     
     }).finally(() => {      
       setFormData(formVisualTemp);    
       setLoading(false);
@@ -106,12 +105,29 @@ useEffect(() => {
         patchData[`patient_${activeRow.row}`].isConfirmed = checked;
     }else if (type === 3){
       patchData[`patient_${activeRow.row}`].isReview = checked;
-  }
+    }else if (type === 4){
+      patchData[`patient_${activeRow.row}`].isFast = checked;
+    }
 
     setPatient(patchData[`patient_${activeRow.row}`]);
 
     dispatch(updateCalendarCheck(activeRow.calendarId, patchData)).catch(error => {        
-      toastFailure(error);                     
+      setToastMessage(error);                     
+    }).finally(() => {
+     
+      setLoading(false);
+    });
+   
+  }
+
+  const handleFull = (checked) => {
+    setLoading(true);
+    
+    const patchData = {};
+    patchData[`full`] = checked;
+
+    dispatch(fullCalendar(calendars[0].id, checked)).catch(error => {        
+      setToastMessage(error);                     
     }).finally(() => {
      
       setLoading(false);
@@ -127,7 +143,7 @@ useEffect(() => {
     
     setLoading(true);
     dispatch(clearCalendar(activeRow.calendarId, activeRow.row)).catch(error => {        
-      toastFailure(error);                    
+      setToastMessage(error);                    
     }).finally(() => {
       hideModal();
       setLoading(false);
@@ -158,7 +174,7 @@ useEffect(() => {
     const patchData = {};
     patchData[`patient_${activeRow.row}`] = {id: data.id, name: data.name, contact: data.contact};
     dispatch(updateCalendarPatient(activeRow.calendarId, patchData)).catch(error => {        
-      toastFailure(error);                       
+      setToastMessage(error);                       
     }).finally(() => {
       setPatient(patchData[`patient_${activeRow.row}`]);
       hideModalPatient();
@@ -197,7 +213,7 @@ useEffect(() => {
     patchData[`time_${activeRow.row}`] = `${newHour}:${newMinute}`;
 
     dispatch(updateCalendarTime(activeRow.calendarId, patchData)).catch(error => {        
-      toastFailure(error);                     
+      setToastMessage(error);                     
     }).finally(() => {
       setLoading(false);
     });
@@ -225,7 +241,15 @@ useEffect(() => {
       <SafeAreaView style={styles.container}>
         <Appbar.Header>
               <Appbar.Content title={`Agenda: ${calendars && calendars[0] ? calendars[0].quantity : "0"}`} />
-             
+               <Checkbox
+                  uncheckedColor="#ffffff"
+                  color="#ffffff"
+                  status={calendars && calendars[0] && calendars[0].full ? 'checked' : 'unchecked'}
+                  onPress={() => {
+                    const checked = calendars && calendars[0] && calendars[0].full;
+                    handleFull(!checked);
+                  }}
+                />
                   <DatePicker
                     
                     placeholderStyle={{color:"#ffffff"}}
@@ -244,9 +268,16 @@ useEffect(() => {
             {[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16].map((row, index) => {
             
             const free = _.isEmpty(value[`patient_${row}`].name);
+
+
+            if(free && value.full) {
+              return;
+            }
+
             const spot = (free ? 'Disponível' : value[`patient_${row}`].name);
             const color = (free ? "gray" : (value[`patient_${row}`].isConfirmed ? "#8bc34a" :"#2196f3"));
-            let infos = (value[`patient_${row}`].isReview ?"[Revisão] " : "");
+            let infos = (value[`patient_${row}`].isFast ?"[Rápido] " : "");
+            infos += (value[`patient_${row}`].isReview ?"[Revisão] " : "");
             infos += (value[`patient_${row}`].isFirstTime ?"[Primeira Vez] " : "");
             infos += (value[`patient_${row}`].isPrivate ?"[Particular] " : "");
 
@@ -315,6 +346,13 @@ useEffect(() => {
 
               <View style={styles.marginButton}>
                 <View style={styles.containerNoFlexRow}>
+                  <Text style={styles.textSwitch}>Rápido</Text>
+                  <Switch value={patient.isFast} onValueChange={(c) => handleChange(4, c)} />
+                </View>
+              </View>
+
+              <View style={styles.marginButton}>
+                <View style={styles.containerNoFlexRow}>
                   <Text style={styles.textSwitch}>Revisão</Text>
                   <Switch value={patient.isReview} onValueChange={(c) => handleChange(3, c)} />
                 </View>
@@ -361,7 +399,19 @@ useEffect(() => {
         </Modal>
         </Portal>
       <Loading visible={loading} onDismiss={() => setLoading(false)} />
-      <Toast ref={(ref) => Toast.setRef(ref)} />
+      <Snackbar
+        visible={!_.isEmpty(toastMessage)}
+        style={styles.toast}
+        onDismiss={() => setToastMessage("")}
+        action={{
+          label: 'Limpar',
+          onPress: () => {
+            setToastMessage("")
+          },
+        }}
+       >
+        {toastMessage}
+      </Snackbar>
       </SafeAreaView>
           
   )
@@ -470,5 +520,9 @@ useEffect(() => {
       justifyContent: 'space-between',
       alignItems: 'center'
     },
+
+    toast: {   
+      marginBottom: 70   
+    }
 
   });

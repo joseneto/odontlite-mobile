@@ -1,7 +1,6 @@
 
 import { Alert } from "react-native";
 import { MMKV } from 'react-native-mmkv';
-import Toast from 'react-native-toast-message';
 
 export const dayMonthYear = (dateString) =>{
     const dateObj =  new Date(dateString);
@@ -115,21 +114,11 @@ export const isUserMaster = () => {
 }
 
 export const toastSuccess = (message) => {
-    Toast.show({
-        type: 'success',
-        position: 'bottom',
-        text1: 'Sucesso',
-        text2: message       
-    });
+    
  }
 
  export const toastFailure = (message) => {
-    Toast.show({
-        type: 'error',
-        position: 'bottom',
-        text1: 'Falha',
-        text2: message       
-    });
+    
  }
  
  export const AlertConfirm = (text, cancelFunction, confirmFunction) =>

@@ -77,6 +77,13 @@ export const clearCalendar= (id, row) => apiRequest({
     onSuccess: calendarUpdated.type    
 })
 
+export const fullCalendar= (id, row) => apiRequest({
+    url: "calendars/"+id,
+    method: 'patch',
+    data: {action: 'FULL', value: row},
+    onSuccess: calendarUpdated.type    
+})
+
 export const filterCalendars = (data) => (dispatch) => {
     
     return dispatch(apiRequest({
