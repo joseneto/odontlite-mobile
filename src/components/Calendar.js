@@ -13,6 +13,7 @@ import { DatePicker} from 'react-native-woodpicker';
 import ModalSelector from 'react-native-modal-selector'
 import Loading from './Loading';
 import Patient from './Patient';
+import { times } from 'lodash';
 const { getCalendar, updateCalendarPatient, updateCalendarTime, clearCalendar, updateCalendarFavorite, updateCalendarCheck, fullCalendar } = require("../store/calendars");
 const { useDispatch, useSelector } = require("react-redux");
 const { formatStringDate, dateTextField, AlertCancel, AlertConfirm } = require('../utils/LibUtils');
@@ -225,11 +226,11 @@ useEffect(() => {
     if(row <= 0){
 
       return {hour: undefined, minute: undefined};
-    }else if(row >= 22){
+    }else if(row >= 17){
 
       return {hour: undefined, minute: undefined};
     }
-
+    
     const timeSelected = calendars[0][`time_${row}`];
     const hour = timeSelected.split(':')[0];
     const minute = timeSelected.split(':')[1];
