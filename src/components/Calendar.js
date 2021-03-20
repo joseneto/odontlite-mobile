@@ -15,6 +15,7 @@ import { DatePicker} from 'react-native-woodpicker';
 import ModalSelector from 'react-native-modal-selector'
 import Loading from './Loading';
 import Patient from './Patient';
+import { forEach } from 'lodash';
 
 const { getCalendar, updateCalendarPatient, updateCalendarTime, clearCalendar, 
   updateCalendarFavorite, updateCalendarCheck, fullCalendar, updateTagPatient } = require("../store/calendars");
@@ -180,9 +181,27 @@ export default function Calendar({ navigation }) {
     setHour(hourActual);
     setMinute(minuteActual);
     setPatient(patient);
+    const tagStateCopy = {...stateTag};
+    const arrayTags = [];
+    patient.tags && patient.tags.forEach(element => {
+      arrayTags.push(element.name);
+    })
+    tagStateCopy.tags.tagsArray = arrayTags;
+    setStateTag(tagStateCopy);
     
   }
   const hideModal= () => {
+    const actualTags = [];
+    const arrayTags = [];
+    patient.tags && patient.tags.forEach(element => {
+      actualTags.push(element.name);
+    })
+    const tagsArray = stateTag.tags.tagsArray;
+
+    if(!_.isEqual(actualTags, tagsArray)){
+      updateTagsServer(tagsArray);
+    }
+
     setOpen(false);
   }
 
@@ -267,19 +286,20 @@ export default function Calendar({ navigation }) {
 
   }, [stateTag.tags]);
 
+ 
+
   const updateTagState = (state) => {
-    console.log("update suggest", state);
-    stateTag.tags = state;
-    setStateTag(stateTag);
+    state.tag = state.tag.toUpperCase();
+    const tagStateCopy = {...stateTag};
+    
+    tagStateCopy.tags = state;
+    setStateTag(tagStateCopy);
   };
 
   const updateSuggestionState = (state) => {
 
-    console.log(tags);
-    console.log(state);
-
     if (state.tag === '') {
-      return
+      return;
     }
 
     let tempSuggestions = [];                            
@@ -298,6 +318,8 @@ export default function Calendar({ navigation }) {
       tagStateCopy.suggestions = [];
       setStateTag(tagStateCopy);
     }
+
+
   };
 
   const renderSuggestions = () => {
@@ -307,6 +329,8 @@ export default function Calendar({ navigation }) {
         stateTag.suggestions.map((item, count) => {
           return (
             <TouchableHighlight
+              activeOpacity={0.6}
+              underlayColor="#DDDDDD"
               onPress={() => onSuggestionClick(item)}
               key={count}
             >
@@ -320,6 +344,7 @@ export default function Calendar({ navigation }) {
     }
   }
 
+
   const onSuggestionClick = (suggestion) => {
 
     const tagStateCopy = {...stateTag};
@@ -327,9 +352,35 @@ export default function Calendar({ navigation }) {
     tagStateCopy.tags.tagsArray.push(suggestion);
     tagStateCopy.suggestions = [];
     setStateTag(tagStateCopy);
-
+    
   }
 
+  const onExitEditTag = () => {
+    updateTagsServer(stateTag.tags.tagsArray);
+  }
+
+  const updateTagsServer = (tagsArray) => {
+
+    setLoading(true);
+
+    const patchData = {};
+    const tagData = [];
+    patchData[`patient_${activeRow.row}`] = {...calendars[0][`patient_${activeRow.row}`]};
+
+    let index = 0;
+    tagsArray.forEach(element => {
+      tagData.push({id: ++index, name: element});
+    });
+
+    patchData[`patient_${activeRow.row}`]['tags'] = tagData;
+
+    dispatch(updateTagPatient(activeRow.calendarId, patchData)).catch(error => {        
+      setToastMessage(error);                 
+    }).finally(() => {   
+      setLoading(false);
+    });
+
+  }
 
   return (
       <SafeAreaView style={styles.container}>
@@ -448,10 +499,12 @@ export default function Calendar({ navigation }) {
                <View style={styles.containerTag}>
 
                 <TagInput
+                  placeholder="Tags..."  
                   updateState={updateTagState}
                   tags={stateTag.tags}
-                  autoCapitalize={'none'}
+                  autoCapitalize={'characters'}
                   inputContainerStyle={[styles.tagInput]}
+                  keysForTag={'@'}              
                   customElement={<View>{renderSuggestions()}</View>}
                 />
               </View>
@@ -585,6 +638,14 @@ export default function Calendar({ navigation }) {
       borderColor: 'gray',
       borderWidth: 1,
       borderRadius: 5,      
+    },
+
+    tag: {
+      backgroundColor: '#f44336'
+    },
+    
+    tagText: {
+      color: '#ffffff'
     },
 
     textPatient: {
