@@ -84,6 +84,13 @@ export const fullCalendar= (id, row) => apiRequest({
     onSuccess: calendarUpdated.type    
 })
 
+export const updateTagPatient= (id, calendar) => apiRequest({
+    url: "calendars/"+id,
+    method: 'patch',
+    data: {action: 'TAG', value: calendar},
+    onSuccess: calendarUpdated.type    
+})
+
 export const filterCalendars = (data) => (dispatch) => {
     
     return dispatch(apiRequest({

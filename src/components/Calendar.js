@@ -6,15 +6,19 @@ import {
     View,
     ScrollView,
     TouchableOpacity,
+    TouchableHighlight,
     Linking        
   } from "react-native";
 import { List, Badge,Portal, Dialog, Switch, Button, Modal, Appbar, IconButton, Snackbar,Checkbox  } from 'react-native-paper';
+import TagInput from 'react-native-tags-input';
 import { DatePicker} from 'react-native-woodpicker';
 import ModalSelector from 'react-native-modal-selector'
 import Loading from './Loading';
 import Patient from './Patient';
-import { times } from 'lodash';
-const { getCalendar, updateCalendarPatient, updateCalendarTime, clearCalendar, updateCalendarFavorite, updateCalendarCheck, fullCalendar } = require("../store/calendars");
+
+const { getCalendar, updateCalendarPatient, updateCalendarTime, clearCalendar, 
+  updateCalendarFavorite, updateCalendarCheck, fullCalendar, updateTagPatient } = require("../store/calendars");
+const { getTags } = require("../store/tags");
 const { useDispatch, useSelector } = require("react-redux");
 const { formatStringDate, dateTextField, AlertCancel, AlertConfirm } = require('../utils/LibUtils');
 const _ = require('lodash');
@@ -30,8 +34,17 @@ export default function Calendar({ navigation }) {
   const [hour, setHour] = useState("08");
   const [minute, setMinute] = useState("00");
   const [activeRow, setActiveRow] = useState({calendarId: '', row: 0 });
+  const [stateTag, setStateTag] = useState({
+    tags: {
+      tag: '',
+      tagsArray: []
+    },
+    suggestions: []
+  });
   const dispatch = useDispatch();
+
   const calendars = useSelector(state => state.entities.calendars.list.map(o => ({...o, tableData: {}})) );
+  const tags = useSelector(state => state.entities.tags.list.map(o => ({...o, tableData: {}})) );
 
   let hourData = [
     { label: "06", key: "06" },
@@ -61,16 +74,24 @@ export default function Calendar({ navigation }) {
     { label: "50", key: "50" }    
   ];
 
-useEffect(() => {
-  setLoading(true);    
-  
-  dispatch(getCalendar({date: dateTextField(formData.date), favorite: formData.favorite})).catch(error => {        
-    setToastMessage(error);                   
-  }).finally(() => {      
-    setLoading(false);
-  });
+  useEffect(() => {
+    setLoading(true);    
+    
+    dispatch(getCalendar({date: dateTextField(formData.date), favorite: formData.favorite})).catch(error => {        
+      setToastMessage(error);                   
+    }).finally(() => {      
+      setLoading(false);
+    });
 
-}, [formData]);
+  }, [formData]);
+
+  useEffect(() => {
+    
+    dispatch(getTags()).catch(error => {        
+      setToastMessage(error);                   
+    });
+
+  }, []);
 
   const onChangeDate = (selectedDate) => {
     const newFormData = {...formData};
@@ -238,6 +259,78 @@ useEffect(() => {
     return {hour: hour, minute: minute};
   };
 
+
+  //TAGS SUGGESTION
+  useEffect(() => {
+    
+    updateSuggestionState(stateTag.tags)
+
+  }, [stateTag.tags]);
+
+  const updateTagState = (state) => {
+    console.log("update suggest", state);
+    stateTag.tags = state;
+    setStateTag(stateTag);
+  };
+
+  const updateSuggestionState = (state) => {
+
+    console.log(tags);
+    console.log(state);
+
+    if (state.tag === '') {
+      return
+    }
+
+    let tempSuggestions = [];                            
+                                                        
+    for (let i = 0; i < tags.length; i++) {            
+      if (tags[i].name.includes(state.tag) === true) {      
+        tempSuggestions.push(tags[i].name)                  
+      }                                                
+    }
+    if (tempSuggestions.length > 0) {
+      const tagStateCopy = {...stateTag};
+      tagStateCopy.suggestions = tempSuggestions;
+      setStateTag(tagStateCopy);
+    } else {
+      const tagStateCopy = {...stateTag};
+      tagStateCopy.suggestions = [];
+      setStateTag(tagStateCopy);
+    }
+  };
+
+  const renderSuggestions = () => {
+
+    if (stateTag.suggestions.length > 0 ) {
+      return (
+        stateTag.suggestions.map((item, count) => {
+          return (
+            <TouchableHighlight
+              onPress={() => onSuggestionClick(item)}
+              key={count}
+            >
+              <Text>{item}</Text>
+            </TouchableHighlight>
+          )
+        })
+      )
+    } else {
+      return null
+    }
+  }
+
+  const onSuggestionClick = (suggestion) => {
+
+    const tagStateCopy = {...stateTag};
+    tagStateCopy.tags.tag = '';
+    tagStateCopy.tags.tagsArray.push(suggestion);
+    tagStateCopy.suggestions = [];
+    setStateTag(tagStateCopy);
+
+  }
+
+
   return (
       <SafeAreaView style={styles.container}>
         <Appbar.Header>
@@ -277,11 +370,11 @@ useEffect(() => {
 
             const spot = (free ? 'Disponível' : value[`patient_${row}`].name);
             const color = (free ? "gray" : (value[`patient_${row}`].isConfirmed ? "#8bc34a" :"#2196f3"));
-            let infos = (value[`patient_${row}`].isFast ?"[Rápido] " : "");
-            infos += (value[`patient_${row}`].isReview ?"[Revisão] " : "");
-            infos += (value[`patient_${row}`].isFirstTime ?"[Primeira Vez] " : "");
-            infos += (value[`patient_${row}`].isPrivate ?"[Particular] " : "");
-
+            let infos = ""
+            value[`patient_${row}`].tags && value[`patient_${row}`].tags.forEach(element => {
+              infos += `[${element.name}] `
+            });
+            
              return  <TouchableOpacity key={row+"A"} onPress={() => openDetailCalendar(value.id, row, value[`patient_${row}`])}>
                 <List.Item
                   description={infos}
@@ -347,37 +440,20 @@ useEffect(() => {
 
               <View style={styles.marginButton}>
                 <View style={styles.containerNoFlexRow}>
-                  <Text style={styles.textSwitch}>Rápido</Text>
-                  <Switch value={patient.isFast} onValueChange={(c) => handleChange(4, c)} />
-                </View>
-              </View>
-
-              <View style={styles.marginButton}>
-                <View style={styles.containerNoFlexRow}>
-                  <Text style={styles.textSwitch}>Revisão</Text>
-                  <Switch value={patient.isReview} onValueChange={(c) => handleChange(3, c)} />
-                </View>
-              </View>
-
-              <View style={styles.marginButton}>
-                <View style={styles.containerNoFlexRow}>
-                  <Text style={styles.textSwitch}>Primeira vez</Text>
-                  <Switch value={patient.isFirstTime} onValueChange={(c) => handleChange(0, c)} />
-                </View>
-              </View>
-
-              <View style={styles.marginButton}>
-                <View style={styles.containerNoFlexRow}>
-                  <Text style={styles.textSwitch}>Particular</Text>
-                  <Switch value={patient.isPrivate} onValueChange={(c) => handleChange(1, c)} />
-                </View>
-              </View>
-
-              <View style={styles.marginButton}>
-                <View style={styles.containerNoFlexRow}>
                   <Text style={styles.textSwitch}>Confirmado</Text>
                   <Switch value={patient.isConfirmed} onValueChange={(c) => handleChange(2, c)} />
                 </View>
+              </View>
+
+               <View style={styles.containerTag}>
+
+                <TagInput
+                  updateState={updateTagState}
+                  tags={stateTag.tags}
+                  autoCapitalize={'none'}
+                  inputContainerStyle={[styles.tagInput]}
+                  customElement={<View>{renderSuggestions()}</View>}
+                />
               </View>
               </>
               }
@@ -496,6 +572,19 @@ useEffect(() => {
    
     marginButton: {    
       marginTop: 10
+    },
+
+    containerTag: {
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginTop: 10
+    },
+
+    tagInput: {
+      height: 45,
+      borderColor: 'gray',
+      borderWidth: 1,
+      borderRadius: 5,      
     },
 
     textPatient: {
